@@ -1,0 +1,15 @@
+2023-09-04 15:19:52,911 - train_model_sample.py[line:213] - INFO: ========== nsDCC testing process ==========
+2023-09-04 15:19:52,911 - train_model_sample.py[line:214] - INFO: Cluster num is set to 4
+2023-09-04 15:19:52,996 - train_model_sample.py[line:219] - INFO: Clustering performance of nsDCC: {'ARI': 0.727, 'NMI': 0.715, 'CA': 0.855, 'JI': 0.674, 'CS': 0.721, 'HS': 0.709, 'VMS': 0.715, 'Sil': 0.277, 'CH': 622.42}
+2023-09-04 15:23:04,757 - train_model_sample.py[line:213] - INFO: ========== nsDCC testing process ==========
+2023-09-04 15:23:04,758 - train_model_sample.py[line:214] - INFO: Cluster num is set to 4
+2023-09-04 15:23:04,838 - train_model_sample.py[line:219] - INFO: Clustering performance of nsDCC: {'ARI': 0.81, 'NMI': 0.81, 'CA': 0.839, 'JI': 0.759, 'CS': 0.81, 'HS': 0.81, 'VMS': 0.81, 'Sil': 0.296, 'CH': 649.079}
+2023-09-04 15:30:15,919 - train_model_sample.py[line:213] - INFO: ========== nsDCC testing process ==========
+2023-09-04 15:30:15,919 - train_model_sample.py[line:214] - INFO: Cluster num is set to 4
+2023-09-04 15:30:16,069 - train_model_sample.py[line:219] - INFO: Clustering performance of nsDCC: {'ARI': 0.797, 'NMI': 0.8, 'CA': 0.819, 'JI': 0.745, 'CS': 0.805, 'HS': 0.795, 'VMS': 0.8, 'Sil': 0.318, 'CH': 720.709}
+2023-09-04 15:34:44,250 - train_model_sample.py[line:213] - INFO: ========== nsDCC testing process ==========
+2023-09-04 15:34:44,250 - train_model_sample.py[line:214] - INFO: Cluster num is set to 4
+2023-09-04 15:34:44,410 - train_model_sample.py[line:219] - INFO: Clustering performance of nsDCC: {'ARI': 0.772, 'NMI': 0.761, 'CA': 0.824, 'JI': 0.717, 'CS': 0.758, 'HS': 0.765, 'VMS': 0.761, 'Sil': 0.299, 'CH': 677.645}
+2023-09-04 15:39:30,290 - train_model_sample.py[line:213] - INFO: ========== nsDCC testing process ==========
+2023-09-04 15:39:30,290 - train_model_sample.py[line:214] - INFO: Cluster num is set to 4
+2023-09-04 15:39:30,438 - train_model_sample.py[line:219] - INFO: Clustering performance of nsDCC: {'ARI': 0.796, 'NMI': 0.798, 'CA': 0.814, 'JI': 0.744, 'CS': 0.803, 'HS': 0.794, 'VMS': 0.798, 'Sil': 0.321, 'CH': 711.005}
