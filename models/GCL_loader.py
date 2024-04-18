@@ -39,7 +39,7 @@ def same_side(dataset, current_point, neighbors):
     angle_signs = np.sign(np.dot(vectors, mean_vector))
 
     # If all signs are same, it means that neighbors are on the same side, otherwise they are not on the same side.
-    if np.all(angle_signs > 0) or np.all(angle_signs < 0):
+    if np.all(angle_signs > 0):
         return True
     else:
         return False
@@ -184,7 +184,6 @@ class scRNAMatrixInstance(Dataset):
             label = -1
 
         if self.transform:
-            # 仅对其中一个样本做增强
             sample_a = torch.Tensor(sample)
             sample_p_1 = self.RandomTransform(sample, self.args_transformation_list[0]).float()
             sample_p_2 = self.RandomTransform(sample, self.args_transformation_list[1]).float()
