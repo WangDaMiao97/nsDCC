@@ -22,7 +22,7 @@ class Feat_Extra(nn.Module):
             self.nn.append(nn.ReLU())
 
         self.proj_head = nn.Sequential(*self.nn)
-        self.reset_parameters()
+        # self.reset_parameters()
 
     def reset_parameters(self, ):
         self.proj_head.apply(init_weights)

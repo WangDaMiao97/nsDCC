@@ -23,7 +23,7 @@ class LayerNorm(nn.Module):
         return self.weight * x + self.bias
 
 class SelfAttention(nn.Module):
-    def __init__(self, num_attention_heads, input_size, hidden_size):
+    def __init__(self, num_attention_heads, input_size, hidden_size, dropout):
         super(SelfAttention, self).__init__()
         if hidden_size % num_attention_heads != 0:
             raise ValueError(
@@ -38,14 +38,14 @@ class SelfAttention(nn.Module):
         # 做完self-attention 做一个前馈全连接 LayerNorm 输出
         self.dense = nn.Linear(hidden_size, hidden_size)
         self.LayerNorm = LayerNorm(hidden_size, eps=1e-12)
-        self.out_dropout = nn.Dropout(0.2)
+        self.out_dropout = nn.Dropout(dropout) # 默认0.2
 
     def transpose_for_scores(self, x):
         new_x_shape = x.size()[:-1] + (self.num_attention_heads, self.attention_head_size)
         x = x.view(*new_x_shape)
         return x.permute(0, 1, 2)
 
-    def forward(self, input_tensor):
+    def forward(self, input_tensor, epoch=0):
         mixed_query_layer = self.query(input_tensor)
         mixed_key_layer = self.key(input_tensor)
         mixed_value_layer = self.value(input_tensor)
@@ -63,7 +63,8 @@ class SelfAttention(nn.Module):
         context_layer = context_layer.view(*new_context_layer_shape) #
 
         hidden_states = self.dense(context_layer)
-        hidden_states = self.out_dropout(hidden_states)
+        out_dropout = nn.Dropout(0.8/(epoch/100+1))  # 默认0.2
+        hidden_states = out_dropout(hidden_states)
         hidden_states = self.LayerNorm(hidden_states+input_tensor) #
 
         return hidden_states
@@ -76,7 +77,7 @@ class Clu_Head(nn.Module):
 
         for i in range(num_layer-1):
             layer_name = "att{}".format(i+1)
-            layer = SelfAttention(num_attention_heads=2, input_size=cfg[i], hidden_size=cfg[i])
+            layer = SelfAttention(num_attention_heads=2, input_size=cfg[i], hidden_size=cfg[i], dropout=0.2)
             self.add_module(layer_name, layer)
 
             layer_name = "lin{}".format(i+1)
@@ -96,7 +97,7 @@ class Clu_Head(nn.Module):
             self.add_module(layer_name, layer)
 
         layer_name = "att_final".format(i + 1)
-        layer = SelfAttention(num_attention_heads=2, input_size=cfg[-2], hidden_size=cfg[-2])
+        layer = SelfAttention(num_attention_heads=2, input_size=cfg[-2], hidden_size=cfg[-2], dropout=0.0)
         self.add_module(layer_name, layer)
 
         layer_name = "lin_final".format(i + 1)
@@ -108,13 +109,13 @@ class Clu_Head(nn.Module):
         self.last_activation = last_activation
         self.batch_norm = batch_norm
 
-    def forward(self, x):
+    def forward(self, x, epoch = 0):
         num_layer = self.num_layer
 
         for i in range(num_layer-1):
             layer_name = "att{}".format(i+1)
             layer = self.__getattr__(layer_name)
-            x = layer(x)
+            x = layer(x, epoch=epoch)
 
             layer_name = "lin{}".format(i+1)
             layer = self.__getattr__(layer_name)
