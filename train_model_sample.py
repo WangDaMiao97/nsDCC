@@ -13,7 +13,7 @@ from metrics import compute_metrics
 from tqdm import tqdm
 
 
-def supposloss(h_1, h_2, mask):
+def supposloss(h_1, h_2, mask, running_device):
     """
     multi-positive contrastive learning loss function
     Args:
@@ -24,12 +24,13 @@ def supposloss(h_1, h_2, mask):
     temp = 0.07
     base_temp = 0.07
     sample_sim = torch.div(torch.matmul(h_1, h_2.T), temp)
+    # for numerical stability
     logits_max, _ = torch.max(sample_sim, dim=1, keepdim=True)
     logits = sample_sim - logits_max.detach()
     # tile mask, mask used for filling the diagonal with 0
     logits_mask = torch.scatter(
         torch.ones_like(mask), 1,
-        torch.arange(sample_sim.shape[0]).view(-1, 1).to('cuda'), 0)
+        torch.arange(sample_sim.shape[0]).view(-1, 1).to(running_device), 0)
     mask = mask * logits_mask
     # compute log_prob
     exp_logits = torch.exp(logits) * logits_mask  # exclude diagonal
@@ -71,7 +72,6 @@ def train_scMPCL(args, adata):
     # ===================================================#
     # Setting the random seed
     torch.manual_seed(args.seed)
-    torch.cuda.manual_seed(args.seed)
     torch.cuda.manual_seed_all(args.seed)
     np.random.seed(args.seed)
     random.seed(args.seed)
@@ -102,7 +102,6 @@ def train_scMPCL(args, adata):
     num_cluster = len(train_dataset.unique_label)
     print("Train dataset num cells: ", train_dataset.num_cells)
     args.clu_cfg.append(num_cluster)
-    print("args.clu_cfg:", args.clu_cfg)
 
     # adjust batch_size according to sample size
     if train_dataset.num_cells < 512:
@@ -119,10 +118,9 @@ def train_scMPCL(args, adata):
 
     # =======================Create Model============================#
     num_feature = train_dataset.num_genes # 输入数据维度
-    model = GCL_clu(num_feature, out_channel=args.hidden_dim, dropout=args.dropout,
-                    clu_cfg=args.clu_cfg, clu_batch_norm=True, clu_dropout=0.2)
+    model = GCL_clu(num_feature, out_channel=args.hidden_dim, fea_dropout=args.fea_dropout,
+                    clu_cfg=args.clu_cfg, clu_dropout=args.clu_dropout, clu_batch_norm=True)
     model.to(running_device)
-    # print(model)
     # define the Adam optimizer and set the decay of learning rate
     train_optimizer = torch.optim.Adam(model.parameters(), lr=args.train_lr, weight_decay=args.weight_decay)
     train_scheduler = ExponentialLR(train_optimizer, gamma=0.99)
@@ -143,13 +141,16 @@ def train_scMPCL(args, adata):
             # images[1] corresponds to the samples that have been augmented by gaussian noise
             images[1] = images[1].to(running_device)
             images[2] = images[2].to(running_device)
-            h_1, pred_1 = model(images[1])
-            h_2, pred_2 = model(images[2])
+            h_1, pred_1 = model(images[1], epoch)
+            h_2, pred_2 = model(images[2], epoch)
 
             # ------------Instance-level contrast (multiple positive sample contrastive loss function)------------
             index = index.reshape((1, -1))
-            sample_mask = torch.eq(index, index.T).float().to('cuda')
-            loss_sample = supposloss(h_1, h_2, sample_mask)
+            index_combined = torch.cat((index, index), dim=1)
+            h_combined = torch.cat((h_1, h_2), dim=0)
+            sample_mask = torch.eq(index_combined, index_combined.T).float().to(running_device)
+            loss_sample = supposloss(h_combined, h_combined, sample_mask, running_device)
+
 
             # ------------cluster-level contrast (unit matrix constraint)------------
             sim = torch.mm(F.normalize(pred_1.t(), p=2, dim=1), F.normalize(pred_2, p=2, dim=0)).to('cuda')
@@ -181,8 +182,8 @@ def train_scMPCL(args, adata):
     print('Train total time: ', noe - start)
 
     # 加载新模型测试预训练结果
-    new_model = GCL_clu(num_feature, out_channel=args.hidden_dim, dropout=args.dropout,
-                        clu_cfg=args.clu_cfg, clu_batch_norm=True)
+    new_model = GCL_clu(num_feature, out_channel=args.hidden_dim, fea_dropout=args.fea_dropout,
+                    clu_cfg=args.clu_cfg, clu_dropout=args.clu_dropout, clu_batch_norm=True)
     new_model.to(running_device)
     new_model.load_state_dict(torch.load(args.train_path))
     new_model.eval()

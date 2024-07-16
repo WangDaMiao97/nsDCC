@@ -5,6 +5,9 @@ from termcolor import cprint
 import scanpy as sc
 from train_model_sample import train_scMPCL
 
+import warnings
+warnings.filterwarnings('ignore')
+
 def get_args_key(args):
     return "-".join([args.dataset_name])
 
@@ -36,7 +39,8 @@ def get_args(dataset_name, dataset_class, log_path , train_path, seed) -> argpar
 
     parser.add_argument("--hidden_dim", default=128, type=int, nargs="+")
     parser.add_argument("--clu_cfg", default=[128, 64], type=int, nargs="+")
-    parser.add_argument("--dropout", default=0.2, type=float)
+    parser.add_argument("--fea_dropout", default=0.6, type=float)
+    parser.add_argument("--clu_dropout", default=0.2, type=float)
     parser.add_argument("--weight_decay", default=0.0001, type=float)
 
     args = parser.parse_args()
@@ -51,31 +55,31 @@ def pprint_args(_args: argparse.Namespace):
 if __name__ == '__main__':
 
     dataset_name = "Klein"
-    dataset_path = "dataset/"+dataset_name+"_preprocessed.h5ad"
+    dataset_path = "dataset/{}_preprocessed.h5ad".format(dataset_name)
     dataset_class = "Group"
-    log_path = "logs/"+dataset_name+"_preprocessed_train.txt"
+    log_path = "logs/{}_preprocessed_train.txt".format(dataset_name)
 
     cprint("## Loading Dataset ##", "yellow")
     # loading data
     adata = sc.read_h5ad(dataset_path)
     print(adata)
 
-    for seed in [0, 2, 4, 8, 16]:
-        # path to store the model
-        train_path = "logs/"+dataset_name+"_preprocessed_" + str(seed) + "_train_model.pth"
-        main_args = get_args(
-            # information of dataset
-            dataset_name=dataset_name, dataset_class=dataset_class,
-            log_path=log_path, train_path=train_path,
-            # random seed
-            seed=seed )
-        pprint_args(main_args)
+    seed = 8
+    # path to store the model
+    train_path = "logs/{}_preprocessed_train_model.pth".format(dataset_name)
+    main_args = get_args(
+        # information of dataset
+        dataset_name=dataset_name, dataset_class=dataset_class,
+        log_path=log_path, train_path=train_path,
+        # random seed
+        seed=seed)
+    pprint_args(main_args)
 
-        logging.basicConfig(level=logging.INFO,
-                            filename=log_path,
-                            filemode='w',
-                            format='%(asctime)s - %(filename)s[line:%(lineno)d] - %(levelname)s: %(message)s')
+    logging.basicConfig(level=logging.INFO,
+                        filename=log_path,
+                        filemode='w',
+                        format='%(asctime)s - %(filename)s[line:%(lineno)d] - %(levelname)s: %(message)s')
 
-        t0 = time.perf_counter()
-        train_scMPCL(main_args, adata)
-        cprint("Done!")
+    t0 = time.perf_counter()
+    train_scMPCL(main_args, adata)
+    cprint("Done!")
