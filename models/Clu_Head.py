@@ -32,13 +32,12 @@ class SelfAttention(nn.Module):
         self.num_attention_heads = num_attention_heads
         self.attention_head_size = int(hidden_size / num_attention_heads)
         self.all_head_size = hidden_size
-        self.query = nn.Linear(input_size, self.all_head_size) # W_q权重矩阵
-        self.key = nn.Linear(input_size, self.all_head_size) # W_k权重矩阵
-        self.value = nn.Linear(input_size, self.all_head_size) # W_v权重矩阵
-        # 做完self-attention 做一个前馈全连接 LayerNorm 输出
+        self.query = nn.Linear(input_size, self.all_head_size)
+        self.key = nn.Linear(input_size, self.all_head_size)
+        self.value = nn.Linear(input_size, self.all_head_size)
         self.dense = nn.Linear(hidden_size, hidden_size)
         self.LayerNorm = LayerNorm(hidden_size, eps=1e-12)
-        self.out_dropout = nn.Dropout(dropout) # 默认0.2
+        self.out_dropout = nn.Dropout(dropout)
 
     def transpose_for_scores(self, x):
         new_x_shape = x.size()[:-1] + (self.num_attention_heads, self.attention_head_size)
@@ -60,12 +59,12 @@ class SelfAttention(nn.Module):
         context_layer = torch.matmul(attention_probs, value_layer)
         context_layer = context_layer.permute(0, 1, 2).contiguous()
         new_context_layer_shape = context_layer.size()[:-2] + (self.all_head_size,)
-        context_layer = context_layer.view(*new_context_layer_shape) #
+        context_layer = context_layer.view(*new_context_layer_shape)
 
         hidden_states = self.dense(context_layer)
-        out_dropout = nn.Dropout(0.8/(epoch/100+1))  # 默认0.2
+        out_dropout = nn.Dropout(0.8/(epoch/100+1))
         hidden_states = out_dropout(hidden_states)
-        hidden_states = self.LayerNorm(hidden_states+input_tensor) #
+        hidden_states = self.LayerNorm(hidden_states+input_tensor)
 
         return hidden_states
 
